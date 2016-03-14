@@ -8,7 +8,7 @@
 __global__ void bfsKernel(LinearizedVertex* vertices, int* edges, unsigned int* costs, size_t size)
 {
 	int offset = (blockDim.x * blockDim.y) * blockIdx.x;	// how many blocks skipped
-	int blockPos = blockDim.x * threadIdx.x + threadIdx.y;	// position in block
+	int blockPos = blockDim.x * threadIdx.y + threadIdx.x;	// position in block
 	int pos = offset + blockPos;
 
 	if (pos >= size) return;
@@ -25,7 +25,6 @@ __global__ void bfsKernel(LinearizedVertex* vertices, int* edges, unsigned int* 
 			{
 				costs[edge] = distance + 1;
 				vertices[edge].frontier_next = true;
-				vertices[edge].visited = true;
 			}
 		}
 	}
@@ -33,7 +32,7 @@ __global__ void bfsKernel(LinearizedVertex* vertices, int* edges, unsigned int* 
 __global__ void bfsKernelRequeue(LinearizedVertex* vertices, size_t size, bool *stop)
 {
 	int offset = (blockDim.x * blockDim.y) * blockIdx.x;	// how many blocks skipped
-	int blockPos = blockDim.x * threadIdx.x + threadIdx.y;	// position in block
+	int blockPos = blockDim.x * threadIdx.y + threadIdx.x;	// position in block
 	int pos = offset + blockPos;
 
 	if (pos >= size) return;
@@ -42,6 +41,7 @@ __global__ void bfsKernelRequeue(LinearizedVertex* vertices, size_t size, bool *
 	{
 		vertices[pos].frontier = true;
 		vertices[pos].frontier_next = false;
+		vertices[pos].visited = true;
 		*stop = false;
 	}
 }
@@ -97,7 +97,9 @@ bool GraphCUDA::is_connected(int from, int to)
 		*stopHost = true;
 
 		bfsKernel << <gridDim, blockDim >> >(*verticesCuda, *edgesCuda, *costsCuda, graphSize);
+		cudaDeviceSynchronize();
 		bfsKernelRequeue << <gridDim, blockDim >> >(*verticesCuda, graphSize, stopCuda.device());
+		cudaDeviceSynchronize();
 	}
 
 	std::vector<unsigned int> costs(graphSize, UINT_MAX);

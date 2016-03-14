@@ -87,8 +87,6 @@ public:
 	{
 		cudaMallocHost(&hostPointer, sizeof(T) * count);
 		cudaHostGetDevicePointer(&this->devicePointer, this->hostPointer, 0);
-
-		int a = 5;
 	}
 	~CudaHostMemory()
 	{
