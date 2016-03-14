@@ -2,10 +2,10 @@
 
 #include <vector>
 
-struct VertexCUDA
+struct LinearizedVertex
 {
 public:
-	VertexCUDA(int edgeIndex, int edgeCount) : edgeIndex(edgeIndex), edgeCount(edgeCount), visited(false), frontier(false), frontier_next(false)
+	LinearizedVertex(int edgeIndex, int edgeCount) : edgeIndex(edgeIndex), edgeCount(edgeCount), visited(false), frontier(false), frontier_next(false)
 	{
 
 	}
@@ -16,25 +16,22 @@ public:
 	bool frontier;
 	bool frontier_next;
 };
-
 struct Vertex
 {
 public:
 	std::vector<int> edges;
 };
 
-void linearize_vertices(const std::vector<Vertex>& vertices, std::vector<VertexCUDA>& cudaVertices, std::vector<int>& edges)
+class Graph
 {
-	for (const Vertex& vertex : vertices)
-	{
-		int edgeCount = (int) vertex.edges.size();
-		int edgeIndex = (int) edges.size();
+public:
+	virtual int add_vertex();
+	virtual void add_edge(int from, int to);
+	bool has_vertex(int id) const;
 
-		for (int edge : vertex.edges)
-		{
-			edges.push_back(edge);
-		}
+	virtual bool is_connected(int from, int to) = 0;
+	virtual double get_shortest_path(int from, int to) { return 0.0; }	// TODO
 
-		cudaVertices.emplace_back(edgeIndex, edgeCount);
-	}
-}
+protected:
+	std::vector<Vertex> vertices;
+};

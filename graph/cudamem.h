@@ -1,7 +1,8 @@
 #pragma once
 
+#include <iostream>
 #include <cuda_runtime.h>
-#include <Windows.h>
+#include <device_launch_parameters.h>
 
 static void checkCudaCall(cudaError_t error, const char* file, int line)
 {
@@ -82,10 +83,12 @@ template <typename T>
 class CudaHostMemory
 {
 public:
-	explicit CudaHostMemory(size_t count = 1) : count(count)
+	CudaHostMemory(size_t count = 1) : count(count)
 	{
-		CHECK_CUDA_CALL(cudaMallocHost(&hostPointer, sizeof(T) * count));
-		CHECK_CUDA_CALL(cudaHostGetDevicePointer(&this->devicePointer, this->hostPointer, 0));
+		cudaMallocHost(&hostPointer, sizeof(T) * count);
+		cudaHostGetDevicePointer(&this->devicePointer, this->hostPointer, 0);
+
+		int a = 5;
 	}
 	~CudaHostMemory()
 	{
@@ -107,29 +110,4 @@ private:
 	T* hostPointer;
 	T* devicePointer;
 	size_t count;
-};
-
-class Timer
-{
-public:
-	Timer()
-	{
-		this->start();
-	}
-
-	void start()
-	{
-		this->timer = GetTickCount();
-	}
-	size_t get_ticks()
-	{
-		return this->timer;
-	}
-	void print()
-	{
-		std::cout << GetTickCount() - this->timer << std::endl;
-	}
-
-private:
-	size_t timer = 0;
 };
