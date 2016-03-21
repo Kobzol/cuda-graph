@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+#include <string>
+
 #include <Windows.h>
 
 class Timer
@@ -19,9 +21,9 @@ public:
 	{
 		return this->timer;
 	}
-	void print()
+	void print(std::string note="")
 	{
-		std::cout << GetTickCount() - this->timer << std::endl;
+		std::cout << note << ": " << GetTickCount() - this->timer << std::endl;
 	}
 
 private:
