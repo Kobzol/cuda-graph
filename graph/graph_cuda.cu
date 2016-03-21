@@ -7,7 +7,6 @@
 #include "util.h"
 
 bool GraphCUDA::CudaInitialized = false;
-extern Timer TIMER;
 
 int GraphCUDA::add_vertex()
 {
@@ -67,7 +66,7 @@ bool GraphCUDA::is_connected(int from, int to)
 {
 	if (!this->has_vertex(from) || !this->has_vertex(to)) return false;
 
-	this->relinearizeVertices();
+	this->relinearizeVertices(true);
 	this->initCuda();
 
 	if (this->edges.size() < 1) return false;
@@ -76,7 +75,6 @@ bool GraphCUDA::is_connected(int from, int to)
 
 	this->linearizedVertices[from].visitIndex = 0;
 
-	TIMER.start();
 	CudaMemory<LinearizedVertex> verticesCuda(graphSize, &(this->linearizedVertices[0]));
 	CudaMemory<Edge> edgesCuda(this->edges.size(), &(this->edges[0]));
 	CudaHostMemory<bool> stopCuda(2);
@@ -118,7 +116,7 @@ __global__ void dijkstraKernel(LinearizedVertex* vertices, Edge* edges, unsigned
 
 	if (vertices[pos].visitIndex == visitCounter)
 	{
-		vertices[pos].visitIndex = CUDA_VISITED;
+		vertices[pos].visitIndex = CUDA_NOT_VISITED;
 		unsigned int distance = costs[pos];
 
 		int edgeCount = vertices[pos].edgeCount;
@@ -127,7 +125,7 @@ __global__ void dijkstraKernel(LinearizedVertex* vertices, Edge* edges, unsigned
 		for (size_t i = 0; i < edgeCount; i++)
 		{
 			Edge& edge = edges[edgeIndex + i];
-			int newDistance = distance + edge.cost;
+			unsigned int newDistance = distance + edge.cost;
 			if (atomicMin(&costs[edge.target], newDistance) > newDistance)
 			{
 				stop[0] = false;
@@ -147,16 +145,13 @@ unsigned int GraphCUDA::get_shortest_path(int from, int to)
 
 	int graphSize = (int) this->vertices.size();
 
-	this->linearizedVertices[from].visitIndex = 0;
+	unsigned int visitCounter = 0;
+	this->linearizedVertices[from].visitIndex = visitCounter;
 
-	TIMER.start();
 	CudaMemory<LinearizedVertex> verticesCuda(graphSize, &(this->linearizedVertices[0]));
 	CudaMemory<Edge> edgesCuda(this->edges.size(), &(this->edges[0]));
 
-	std::vector<unsigned int> costs(graphSize, INT_MAX);
-	CudaMemory<unsigned int> costsCuda(graphSize, 0xFF);
-	unsigned int visitCounter = 0;
-	
+	CudaMemory<unsigned int> costsCuda(graphSize, 0xEE);
 	CudaHostMemory<bool> stopCuda;
 
 	// computation
@@ -179,23 +174,27 @@ unsigned int GraphCUDA::get_shortest_path(int from, int to)
 		visitCounter++;
 	}
 
+	std::vector<unsigned int> costs(graphSize);
 	costsCuda.load(costs[0], graphSize);
 
 	return costs[to];
 }
 
-void GraphCUDA::relinearizeVertices()
+void GraphCUDA::relinearizeVertices(bool force)
 {
-	this->edges.clear();
-	this->linearizedVertices.clear();
-
-	for (const Vertex& vertex : this->vertices)
+	if (this->dirty || force)
 	{
-		int edgeCount = (int) vertex.edges.size();
-		int edgeIndex = (int) edges.size();
+		this->edges.clear();
+		this->linearizedVertices.clear();
 
-		this->edges.insert(this->edges.end(), vertex.edges.begin(), vertex.edges.end());
-		this->linearizedVertices.emplace_back(edgeIndex, edgeCount);
+		for (const Vertex& vertex : this->vertices)
+		{
+			int edgeCount = (int)vertex.edges.size();
+			int edgeIndex = (int)edges.size();
+
+			this->edges.insert(this->edges.end(), vertex.edges.begin(), vertex.edges.end());
+			this->linearizedVertices.emplace_back(edgeIndex, edgeCount);
+		}
 	}
 
 	this->dirty = false;

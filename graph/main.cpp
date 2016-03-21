@@ -96,8 +96,6 @@ void load_dimacs_graph(std::string path, std::vector<Vertex>& vertices, int addi
 	graphFile.close();
 }
 
-Timer TIMER;
-
 int main()
 {
 	srand((unsigned int) time(nullptr));
@@ -125,18 +123,19 @@ int main()
 
 	long gpu_total = 0;
 	long cpu_total = 0;
-	const size_t ITERATION_COUNT = 10;
+	const size_t ITERATION_COUNT = 100;
 
 	for (int i = 0; i < ITERATION_COUNT; i++)
 	{
 		int from = randomGenerator(engine);
 		int to = randomGenerator(engine);
-
-		unsigned int resultGPU = g.get_shortest_path(from, to);
-		gpu_total += TIMER.get_millis();
-
+		
 		Timer timer;
-		unsigned int resultCPU = cpu.get_shortest_path(from, to);
+		unsigned int resultGPU = g.is_connected(from, to);
+		gpu_total += timer.get_millis();
+
+		timer.start();
+		unsigned int resultCPU = cpu.is_connected(from, to);
 		cpu_total += timer.get_millis();
 
 		if (resultGPU != resultCPU)

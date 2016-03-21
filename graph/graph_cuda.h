@@ -11,13 +11,13 @@
 struct LinearizedVertex
 {
 public:
-	LinearizedVertex(int edgeIndex, int edgeCount) : edgeIndex(edgeIndex), edgeCount(edgeCount), visitIndex(CUDA_NOT_VISITED)
+	LinearizedVertex(int edgeIndex, int edgeCount) : edgeCount(edgeCount), edgeIndex(edgeIndex), visitIndex(CUDA_NOT_VISITED)
 	{
 
 	}
 
-	int edgeIndex;
 	int edgeCount;
+	int edgeIndex;
 	int visitIndex;
 };
 
@@ -31,7 +31,7 @@ public:
 	virtual unsigned int get_shortest_path(int from, int to) override;
 
 private:
-	void relinearizeVertices();
+	void relinearizeVertices(bool force = false);
 	void initCuda();
 
 	static bool CudaInitialized;
