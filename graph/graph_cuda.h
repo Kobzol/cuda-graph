@@ -2,6 +2,25 @@
 
 #include "graph.h"
 
+#define CUDA_NOT_VISITED (-1)
+#define CUDA_VISITED (INT_MAX)
+
+/*
+* Linearized vertex without edges that is used in CUDA kernels.
+*/
+struct LinearizedVertex
+{
+public:
+	LinearizedVertex(int edgeIndex, int edgeCount) : edgeIndex(edgeIndex), edgeCount(edgeCount), visitIndex(CUDA_NOT_VISITED)
+	{
+
+	}
+
+	int edgeIndex;
+	int edgeCount;
+	int visitIndex;
+};
+
 class GraphCUDA : public Graph
 {
 public:

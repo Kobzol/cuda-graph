@@ -2,24 +2,6 @@
 
 #include <vector>
 
-/*
- * Linearized vertex without edges that is used in CUDA kernels.
- */
-struct LinearizedVertex
-{
-public:
-	LinearizedVertex(int edgeIndex, int edgeCount) : edgeIndex(edgeIndex), edgeCount(edgeCount), visited(false), frontier(false), frontier_next(false)
-	{
-
-	}
-
-	int edgeIndex;
-	int edgeCount;
-	bool frontier;
-	bool visited;
-	bool frontier_next;
-};
-
 struct Edge
 {
 public:

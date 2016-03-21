@@ -2,8 +2,7 @@
 
 #include <iostream>
 #include <string>
-
-#include <Windows.h>
+#include <chrono>
 
 class Timer
 {
@@ -13,19 +12,21 @@ public:
 		this->start();
 	}
 
+	long get_millis()
+	{
+		auto timeDiff = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - this->timer);
+		return (long) timeDiff.count();
+	}
+
 	void start()
 	{
-		this->timer = GetTickCount();
-	}
-	size_t get_ticks()
-	{
-		return this->timer;
+		this->timer = std::chrono::steady_clock::now();
 	}
 	void print(std::string note="")
 	{
-		std::cout << note << ": " << GetTickCount() - this->timer << std::endl;
+		std::cout << note << ": " << this->get_millis() << std::endl;
 	}
 
 private:
-	size_t timer = 0;
+	std::chrono::time_point<std::chrono::system_clock> timer;
 };

@@ -96,12 +96,17 @@ void load_dimacs_graph(std::string path, std::vector<Vertex>& vertices, int addi
 	graphFile.close();
 }
 
+Timer TIMER;
+
 int main()
 {
 	srand((unsigned int) time(nullptr));
 
+	std::vector<int> fromSelected = { 220319, 199325, 24968, 92027, 132654, 193987, 17577, 104134, 255400, 105773 };
+	std::vector<int> toSelected = { 34750, 93984, 22240, 130238, 184918, 131624, 162000, 127830, 164082, 175290 };
+
 	GraphCUDA g;
-	load_dimacs_graph("new-york.gr", g.vertices, 5);
+	load_dimacs_graph("new-york.gr", g.vertices, 8);
 
 	size_t count = 0;
 	for (Vertex& vertex : g.vertices)
@@ -118,20 +123,21 @@ int main()
 
 	std::cout << "Load finished" << std::endl;
 
-	//cudaProfilerStart();
+	long gpu_total = 0;
+	long cpu_total = 0;
+	const size_t ITERATION_COUNT = 10;
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < ITERATION_COUNT; i++)
 	{
 		int from = randomGenerator(engine);
 		int to = randomGenerator(engine);
 
-		Timer timer;
-		unsigned int resultGPU = g.is_connected(from, to);
-		timer.print("GPU");
+		unsigned int resultGPU = g.get_shortest_path(from, to);
+		gpu_total += TIMER.get_millis();
 
-		timer.start();
-		unsigned int resultCPU = cpu.is_connected(from, to);
-		timer.print("CPU");
+		Timer timer;
+		unsigned int resultCPU = cpu.get_shortest_path(from, to);
+		cpu_total += timer.get_millis();
 
 		if (resultGPU != resultCPU)
 		{
@@ -139,11 +145,10 @@ int main()
 		}
 	}
 
-	std::cout << "Calculation finished" << std::endl;
+	std::cout << "CPU average: " << (cpu_total / ITERATION_COUNT) << std::endl;
+	std::cout << "GPU average: " << (gpu_total / ITERATION_COUNT) << std::endl;
 
 	getchar();
-
-	//cudaProfilerStop();
 
     return 0;
 }
